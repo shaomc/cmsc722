@@ -1,0 +1,157 @@
+.. A.L.E Documentation 
+   This file contains the text documentation for A.L.E as well as the sphinx directions for generating A.L.E's website. For more information on sphinx, please see: http://sphinx.pocoo.org
+
+
+
+======================================
+A.L.E: Atari 2600 Learning Environment
+======================================
+
+Overview
+========
+
+A.L.E (Atari 2600 Learning Environment) is a simple object-oriented framework that allows researchers and hobbyists to develop AI agents for Atari 2600 games. Built on top of `Stella <http://stella.sourceforge.net>`_, the popular Atari 2600 emulator, the goal of A.L.E is to separate the AI development from the low-level details of Atari 2600 games and the emulation process. 
+
+
+Features
+========
+
+ * A simple object-oriented framework for developing new AI agents and adding new games.
+ * A.L.E uncouples the emulation core from the rendering and sound generation modules of Stella. This enables fast emulation on clusters with minimum library dependencies.
+ * Automatic extraction of the game score and the end of the game for 54 Atari 2600 games. The full list of these games is provided in :doc:`list_of_current_games`
+ * Multi-platform: A.L.E has been compiled and tested under OS X and a number of Linux distributions. It should also compile via Visual Studio in Windows, but it has not been tested yet.
+ * Enables AI agents developed in any language to communicate with the emulation core via `FIFO pipes <http://en.wikipedia.org/wiki/Named_pipe>`_. There is also a Python code-base included, to demonstrate the use of FIFO Pipes and provide some basic tools for collecting and managing samples from games. To take full advantage of the A.L.E features, however, the agents should be implemented in C++.
+ * Additional tools for saving screenshots, exporting and plotting vectors, etc.
+ 
+Download and Install
+====================
+The A.L.E source code can be downloaded from :download:`here <../../ale_v0.1.tar.gz>`. A.L.E is released under `GNU General Public License <http://www.gnu.org/licenses/gpl-3.0.txt>`_. 
+This package includes a *makefile* which compiles A.L.E. under \*NIX operating systems. 
+
+
+Documentation
+=============
+
+Running the Current Agents
+--------------------------
+In the A.L.E framework, there is always an *agent* running in given a *game*. The agent is specified using ``-player_agent [agent]`` option. To specify a game, the name of its ROM file should be entered as the last argument. For A.L.E to detect the correct game settings, a specific ROM name should be used for each game. You can find the list of valid ROM names in :doc:`list_of_current_games`.
+
+The simplest way to run A.L.E is by specifying a player-agent and a ROM file. For example, the following command will run the Random Agent on the game Freeway::
+	``> ./ale -player_agent random_agent  freeway.bin``
+
+To actually see what the agent is doing in the game, you need to tell A.L.E to export screenshots from the game::
+	``> ./ale -player_agent random_agent -export_frames_frq 1 freeway.bin``
+
+You can also tell A.L.E to export the received rewards. The following command will export the rewards received by the Random Agent every 100 episodes:
+	``> ./ale -player_agent random_agent -export_frames_frq 1 -export_rewards_frq 100 freeway.bin`` Both rewards-per-frame and rewards-per-episode are exported as CSV text files. 
+
+A list of all options can be accessed using:
+	``> ./ale -help``
+
+Developing a New Agent
+-----------------------
+A new AI agent is developed by extending the ``PlayerAgent`` class. Each new agent needs to implement the following three functions:
+    * ``virtual Action on_start_of_game(void)``
+        This method is called at the beginning of each game, on the frame in which the player starts acting in the game. It can be used to setup the AI agent for a new episode.
+
+
+    * ``virtual void on_end_of_game(void)``
+        This method is called when the game ends. The superclass implementation in ``PlayerAgent`` takes care of counting number of episodes and saving the reward history, and should always be called from the derived classes.
+
+    * ``virtual Action agent_step(  const IntMatrix* screen_matrix, const IntVect* console_ram, int frame_number)``
+        The agent is given a 2D array of the color indices in the current game screen and the contents of the console RAM, and it needs to decide the next action based on the desired algorithm. The implementation in the superclass takes care of resetting the game at the end, skipping the initial animation frames, pressing the first action (if defined), and counting frame numbers. It should be called from all the derived classes. As an example, here is the ``agent_step`` implementation for RandomAgent, an agent that acts randomly in all games::
+    
+            Action RandomAgent::agent_step( const IntMatrix* screen_matrix, 
+                                            const IntVect* console_ram, int frame_number) {
+                Action special_action = PlayerAgent::agent_step(screen_matrix, 
+                                                                console_ram, frame_number);
+                if (special_action != UNDEFINED) {
+                    return special_action;  // The game is in the initial delay, or resetting 
+                }
+                Action rand_action = choice <Action> (p_game_settings->pv_possible_actions);
+                return rand_action;
+            }
+    
+        Note that when ``PlayerAgent::agent_step`` returns an action other than ``UNDEFINED``, the derived class should return that action. 
+
+To make a new agent accessible from the command prompt, it needs to be declared in the ``PlayerAgent::generate_agent_instance`` function::
+
+    if (player_agent == "random_agent") {
+        cout << "Game will be controlled by Random Agent" << endl;
+        new_agent = new RandomAgent(_game_settings, _osystem);
+    }
+
+
+Adding a New Game
+-----------------------
+To add a new game to the list of recognizable games, its properties (such as available actions, name of the ROM file, and number of initial animation frames) should be declared by defining a new class that extends the ``GameSettings`` class. This class should also implement the following two methods:
+    * ``float get_reward( const IntMatrix* screen_matrix, const IntVect* console_ram)``
+        Extracts the reward from either the current screen matrix or the console RAM.
+    * ``bool is_end_of_game(const IntMatrix* screen_matrix, const IntVect* console_ram, int frame_counter)``
+        Detected the end of the game either based on the current screen matrix or the content of the console RAM
+
+Once the new class is definied, its ROM name needs to be added to ``GameSettings::generate_game_Settings_instance``
+
+Communicating with A.L.E via FIFO pipes
+---------------------------------------
+If you prefer to develop an AI agent in a language other than C++, A.L.E allows you to communicate with the emulation core via `FIFO (Named) Pipes <http://en.wikipedia.org/wiki/Named_pipe>`_. To enable FIFO pipes, use the ``-game_controller fifo`` option. Before running A.L.E though, two FIFo pipes need to be created:
+	* ``ale_fifo_out`` (A.L.E writes its output to this pipe and the third-party program reads its input from here)
+	* ``ale_fifo_in``  (The third-party program writes its output to this pipe, and A.L.E reads its input from here)
+In \*NIX based operating systems, these pipes can be generated using the `mkfifo <http://linux.die.net/man/1/mkfifo>`_ command::
+	* ``> mkfifo ale_fifo_out``
+	* ``> mkfifo ale_fifo_in``
+
+Now, we can run A.L.E:
+	``> ./ale -game_controller fifo [other options] [ROM file]``
+A.L.E will show the introduction text and then wait for another program to start communicating with it through the pipes. 
+
+For an example of communicating with A.L.E through the FIFO pipes, look at ``run_ale.py`` in the ``fifo_sample`` directory. Bellow we will go through the communication step by step:
+
+	1- After running A.L.E, the first step is to open the pipes. FIFO pipes can be opened and read /  written to like generic files::
+
+		fin  = open('ale_fifo_out')
+		fout = open('ale_fifo_in', 'w')
+	
+	Note that ``ale_fifo_out`` is opened for reading from and ``ale_fifo_in`` is opened to write into.
+	
+	2- The first data that A.L.E sends through the pipes is the height and width of the game screen separated with a - (dash)::
+
+		str_in = fin.readline()
+		str_in_split = str_in.split('-')
+		width = int(str_in_split[0])
+		height = int(str_in_split[1])
+
+	3- A.L.E will then wait for the third-party program to send it three pieces of information:
+		a) Whether the game screen should be sent on every frame.
+		b) Whether the console RAM should be sent on every frame.
+		c) Whether A.L.E should skip frames. That is, instead of sending the game info on every frame and wait for a new action, send the game info every k frames and repeat the given action for another k frames. 
+	This information should be written to ``ale_fifo_in`` as comma-separated integer values::
+
+		fout.write("%d,%d,%d\n"%(update_screen_matrix, update_console_ram, skip_frames_num))
+		fout.flush()
+
+	4- Now, we enter the main loop of the game. On each new frame, A.L.E writes the contents of the game screen and console RAM to ``ale_fifo_out`` and waits until the third-party agent writes an action for each of the two players on ``ale_fifo_in``. This loop continues until the game ends.
+
+	Note that A.L.E does not send the complete game matrix on every step. It only sends the i,j values and the new color index for the pixels that have changed color in the current frame. See ``gen_ram_array`` and ``update_screeen_matrix`` functions in ``run_ale.py`` for an illustration of how to read the content of the screen matrix and console RAM from the string block sent by A.L.E.
+
+	The actions chosen by the third-party AI agent should be written on ``ale_fifo_in`` as comma-separated integer values::
+
+		fout.write("%d,%d\n"%(player_a_action, player_b_action))
+		fout.flush()
+
+	The integer value for the valid actions are listed in ``common_constants.h`` located in ``src/player_agents`` directory. 
+
+Demo Videos
+===========
+
+Credits
+=======
+A.L.E is developed by `Yavar Naddaf <http://yavar.naddaf.name>`_, based on the `Stella <http://stella.sourceforge.net>`_ source code, as part of his Masters thesis work under the supervision of `Michael Bowling <http://games.cs.ualberta.ca/~bowling/>`_. The full text of the thesis can be downloaded here: `Learning to Play Generic Atari 2600 Games <http://yavar.naddaf.name/downloads/yavar_naddaf_masters_thesis.pdf>`_.
+
+
+
+.. toctree::
+   :maxdepth: 2
+	list_of_current_games
+
+

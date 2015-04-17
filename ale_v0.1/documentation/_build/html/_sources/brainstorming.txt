@@ -1,0 +1,18 @@
+A.L.E: Atari 2600 Learning Environment 
+
+
+- Overview
+Atari 2600 Learning Environment is a simple object-oriented framework that allows researchers and hobbyists to develop AI agents for Atari 2600 games. Built on top of Stella, the popular Atari 2600 emulator, the goal of A.L.E is to separate the low-level details of Atari 2600 games and the emulation process from the AI development. 
+
+- Features
+ + A simple object-oriented framework for developing new AI agents and adding new games
+ + 
+- Documentation
+  + Running the current agents
+  + Developing a new agent
+  + Communicating with ALE via FIFO pipes
+  + Adding a new game
+  + Example: Generating a Random agent in 10 lines
+- Download
+- Learning in Atari 2600 Demos
+- Credits
