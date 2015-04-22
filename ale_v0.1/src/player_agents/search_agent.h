@@ -28,6 +28,7 @@ class SearchAgent : public PlayerAgent {
 	friend class SearchTree;
 	friend class FullSearchTree;
 	friend class UCTSearchTree;
+	friend class MCSearchTree;
 	friend class TreeNode;
     public:
         SearchAgent(GameSettings* _game_settings, OSystem* _osystem);
