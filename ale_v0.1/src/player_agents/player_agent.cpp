@@ -62,7 +62,7 @@ PlayerAgent::PlayerAgent(GameSettings* _game_settings, OSystem* _osystem) :
 	b_end_game_with_score = settings.getBool("end_game_with_score", true);
     
     game = _osystem->settings().getString("rom_file");
-    game = game.substr(4);
+    game = game.substr(4,game.length()-8);
 
 	if (b_minus_one_zero_reward) {
 		cout << "Manually inforcing -1/0 reward system" << endl;
@@ -520,10 +520,15 @@ void PlayerAgent::export_screen(const IntMatrix * screen_matrix) {
 	if (i_frame_counter == i_skip_export_on_frame) {
 		return;
 	}
+    
+    string search_method = p_osystem->settings().getString("search_method", true); 
+    string player_agent = p_osystem->settings().getString("player_agent");
+
+
 	// Export the current screen to a PNG file
 	ostringstream filename;
 	char buffer [50];
 	sprintf (buffer, "%09d", i_frame_counter);
-	filename << "exported_screens/frame_" << buffer << ".png";
+	filename << "exported_screens/"<< search_method << "_" << game << "_frame_" << buffer << ".png";
 	p_osystem->p_export_screen->save_png(screen_matrix, filename.str());
 }
