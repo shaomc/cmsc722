@@ -355,7 +355,7 @@ void PlayerAgent::on_end_of_game(void) {
     filename1.str("");
     filename1 << "game_" << game << ".txt";
     ofstream file;
-	file.open(filename1.str(), std::fstream::app);
+	file.open(filename1.str().c_str(), std::fstream::app);
     file << "Agent " << player_agent << "search_method " << search_method <<
             ", Episode #" << i_episode_counter <<
             ", Frame #" << i_frame_counter << 
@@ -406,7 +406,7 @@ void PlayerAgent::on_end_of_game(void) {
              << f_all_episode_reward/(i_episode_counter-1) << endl;
 
         filename1.str("summary_all_game_result.txt");
-        file.open(filename1.str(), std::fstream::app);
+        file.open(filename1.str().c_str(), std::fstream::app);
         file << "Agent: " << player_agent << "search_method: " << search_method 
             << "Game: "
              << game << " number_of_episodes: " << i_max_num_episodes 
