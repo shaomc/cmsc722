@@ -62,7 +62,7 @@ class TreeNode {
 								// node, how many times did we end up dead?
 		float f_uct_sum_reward;	// Sum of the rewards we have recieved through
 								//  all simulations from this node
-
+        int i_mc_current_child; //current Monte Carlo child, used to get next child for Monte Carlo rollout
 		
 };
 

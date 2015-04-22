@@ -116,6 +116,8 @@ class PlayerAgent  {
         long long i_frame_counter;        // number of frames we have seen
         long long i_episode_first_frame;  // The frame where the episode starts
         float f_episode_reward;           // Reward in the current episode
+        float f_all_episode_reward;       //Reward in all episodes
+        string game;                      //name of current game
         FloatVect* pv_reward_per_episode; // Rewards recieved per episode
 		FloatVect* pv_reward_per_frame;	  // Rewards recieved per frame
 		IntVect* pv_episodes_start_frame; // frame number at beginning each epis

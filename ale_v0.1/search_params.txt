@@ -1,5 +1,5 @@
 ; The Search-Agent parameters are stored here
-search_method = fulltree
+search_method = mc
 sim_steps_per_node = 10
 max_sim_steps_per_frame = 4000
 discount_factor = 0.99

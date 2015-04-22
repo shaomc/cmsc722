@@ -36,6 +36,7 @@ TreeNode::TreeNode(	TreeNode* parent, const string start_state,
 	f_uct_value(0.0),
 	i_uct_visit_count(0),
 	i_uct_death_count(0),
+    i_mc_current_child(-1),
 	f_uct_sum_reward(0.0)  {
 	// Simulate the game for si_num_sim_steps
 	search_agent->load_state(start_state);

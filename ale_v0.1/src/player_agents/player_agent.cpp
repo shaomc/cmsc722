@@ -36,11 +36,13 @@ PlayerAgent::PlayerAgent(GameSettings* _game_settings, OSystem* _osystem) :
     pm_curr_screen_matrix = NULL;
     pv_curr_console_ram = NULL;
     i_num_actions = p_game_settings->pv_possible_actions->size();
+    cout << "num actions: " << i_num_actions << endl;
     e_episode_status = INITIAL_DELAY;
     i_frame_counter = 0;
     i_episode_first_frame = 0;
     i_episode_counter = 0;
     f_episode_reward = 0;
+    f_all_episode_reward = 0;
     pv_reward_per_episode = new FloatVect;
 	pv_reward_per_frame = new FloatVect;
 	pv_episodes_start_frame = new IntVect; 
@@ -58,6 +60,10 @@ PlayerAgent::PlayerAgent(GameSettings* _game_settings, OSystem* _osystem) :
 	i_init_act_explor_count = settings.getInt("init_act_explor_count", true);
 	b_minus_one_zero_reward = settings.getBool("minus_one_zero_reward", true);
 	b_end_game_with_score = settings.getBool("end_game_with_score", true);
+    
+    game = _osystem->settings().getString("rom_file");
+    game = game.substr(4);
+
 	if (b_minus_one_zero_reward) {
 		cout << "Manually inforcing -1/0 reward system" << endl;
 	}
@@ -342,10 +348,27 @@ void PlayerAgent::on_end_of_game(void) {
 	pv_episodes_start_frame->push_back(i_episode_first_frame);
 	pv_episodes_end_frame->push_back(i_frame_counter);
 	
-    cout << "Episode #" << i_episode_counter <<
+	string search_method = p_osystem->settings().getString("search_method", true); 
+    string player_agent = p_osystem->settings().getString("player_agent");
+
+    ostringstream filename1;
+    filename1.str("");
+    filename1 << "game_" << game << ".txt";
+    ofstream file;
+	file.open(filename1.str(), std::fstream::app);
+    file << "Agent " << player_agent << "search_method " << search_method <<
+            ", Episode #" << i_episode_counter <<
             ", Frame #" << i_frame_counter << 
             ", Num Frames = " << num_frames <<
             ", Sum Reward = " << f_episode_reward << endl;
+	file.close();
+
+    cout << "Agent " << player_agent << "search_method " << search_method <<
+            ", Episode #" << i_episode_counter <<
+            ", Frame #" << i_frame_counter << 
+            ", Num Frames = " << num_frames <<
+            ", Sum Reward = " << f_episode_reward << endl;
+    f_all_episode_reward += f_episode_reward;
     f_episode_reward = 0;
     i_episode_counter++;
     
@@ -379,8 +402,21 @@ void PlayerAgent::on_end_of_game(void) {
     if ((i_max_num_episodes != -1) && 
         (i_episode_counter > i_max_num_episodes)) {
 		cout << "Max number of episodes: " << i_max_num_episodes 
-			 << " reached." << endl;
-		end_game();
+			 << " reached. Average reward per episode: " 
+             << f_all_episode_reward/(i_episode_counter-1) << endl;
+
+        filename1.str("summary_all_game_result.txt");
+        file.open(filename1.str(), std::fstream::app);
+        file << "Agent: " << player_agent << "search_method: " << search_method 
+            << "Game: "
+             << game << " number_of_episodes: " << i_max_num_episodes 
+			 << " Average_reward: " 
+             << f_all_episode_reward/(i_episode_counter-1) << endl;
+        file.close();
+
+
+        f_all_episode_reward = 0;
+        end_game();
     }
 }
 
