@@ -25,6 +25,7 @@ MODULE_OBJS := \
 	src/player_agents/search_tree.o \
 	src/player_agents/full_search_tree.o \
 	src/player_agents/uct_search_tree.o \
+	src/player_agents/mc_search_tree.o \
 	src/player_agents/actions_summary_agent.o \
 
 MODULE_DIRS += \
